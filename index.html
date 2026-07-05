@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>信保通电子签名 · 智能客服</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: linear-gradient(135deg, #004b93, #003d7a);
+            color: white;
+            padding: 16px 20px 12px;
+            text-align: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .header .sub {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+        .header .sub a {
+            color: #b3d4ff;
+            text-decoration: underline;
+            word-break: break-all;
+        }
+        .header .sub a:hover {
+            color: #fff;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f0f2f5;
+        }
+        .message {
+            max-width: 88%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            word-break: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .message.user {
+            align-self: flex-end;
+            background: #004b93;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .message.bot {
+            align-self: flex-start;
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+        .message.bot .answer-title {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 8px;
+            color: #004b93;
+        }
+        .message.bot strong {
+            color: #004b93;
+        }
+        .message.bot .section-title {
+            font-weight: 600;
+            margin-top: 10px;
+            margin-bottom: 4px;
+            color: #222;
+        }
+        .message.bot .section-title:first-of-type {
+            margin-top: 0;
+        }
+        .message.bot .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .message.bot .warning {
+            color: #d93025;
+            font-weight: 500;
+            background: #fce8e6;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 6px 0;
+        }
+        .message.bot .link-text {
+            color: #004b93;
+            word-break: break-all;
+            font-weight: 500;
+            text-decoration: underline;
+        }
+        .message.bot ul,
+        .message.bot ol {
+            padding-left: 20px;
+            margin: 6px 0;
+        }
+        .message.bot li {
+            margin-bottom: 4px;
+        }
+        .message.bot .no-match {
+            color: #666;
+            font-style: italic;
+        }
+        .message.bot .raw-html p {
+            margin: 6px 0;
+        }
+        .message.bot .raw-html ol,
+        .message.bot .raw-html ul {
+            padding-left: 20px;
+            margin: 6px 0;
+        }
+
+        .input-area {
+            background: white;
+            padding: 10px 16px;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid #e8e8e8;
+            flex-shrink: 0;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-area input:focus {
+            border-color: #004b93;
+        }
+        .input-area button {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: #004b93;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .input-area button:hover {
+            background: #003d7a;
+        }
+        .input-area button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .quick-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #f8f9fa;
+            flex-shrink: 0;
+            border-top: 1px solid #e8e8e8;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .quick-questions button {
+            background: white;
+            border: 1px solid #d0d7e3;
+            border-radius: 16px;
+            padding: 5px 12px;
+            font-size: 12px;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .quick-questions button:hover {
+            background: #e6f0ff;
+            border-color: #004b93;
+            color: #004b93;
+        }
+
+        .typing {
+            align-self: flex-start;
+            background: white;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .typing span {
+            width: 6px;
+            height: 6px;
+            background: #999;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        .typing span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        .typing span:nth-child(3) {
+            animation-delay: 0s;
+        }
+        @keyframes bounce {
+            0%,
+            80%,
+            100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 6px;
+            font-size: 11px;
+            color: #999;
+            flex-shrink: 0;
+            background: #f8f9fa;
+            border-top: 1px solid #e8e8e8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>信保通电子签名操作指南 + 故障FAQ合集</h1>
+        <div class="sub">
+            官方原文参考：<a href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html" target="_blank" rel="noopener">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a>
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="message bot" id="welcomeMsg">
+            👋 你好！我是信保通电子签名智能助手。<br>
+            你可以直接输入问题，比如：<br><br>
+            • UKey 被锁定了怎么办？<br>
+            • 怎么下载证书？<br>
+            • 一键修复报错怎么处理？<br>
+            • 忘记密码如何重置？<br><br>
+            或者点击下方任一问题快速提问👇
+        </div>
+    </div>
+
+    <div class="quick-questions" id="quickQuestions"></div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="输入你的问题..." autofocus>
+        <button id="sendBtn">➤</button>
+    </div>
+
+    <div class="footer">信保通电子签名 FAQ 助手 · 数据来源：官方操作指南</div>
+
+    <script>
+        // ================================================================
+        //  1. FAQ 数据库（21 个问题，含短标签）
+        // ================================================================
+        const faqs = [{
+            // 1. 忘记密码（排在第一位）
+            shortLabel: "忘记密码",
+            keywords: ["忘记密码", "密码忘记", "UKey密码", "PIN码", "密码重置", "重置密码", "锁定解锁", "解锁UKey", "密码锁定"],
+            title: "忘记密码怎么办",
+            answerHtml: `<p>UKey 密码锁定、忘记 PIN 码、证书密码重置均需联系人工客服处理：</p>
+                        <ol>
+                            <li>点击弹窗内「联系在线客服」按钮，跳转至客服页面；</li>
+                            <li>提供企业名称、信保通编号、UKey 黑白壳类型；</li>
+                            <li>旧版 UKey 在线解锁，新版 UKey 提供挑战码获取授权码重置密码。</li>
+                        </ol>
+                        <p>也可扫码联系客服解锁↓<br />
+                        <a class="link-text" href="https://work.weixin.qq.com/kfid/kfc14d53dfd64d2767d?enc_scene=ENCFnhiNBt3SyHSswTQU3a8gWQk3E8m8dAgesxJ65cNNR5y&scene_param=+%E5%B9%BF%E4%B8%9C%E5%88%86%E5%85%AC%E5%8F%B8%E4%BF%A1%E4%BF%9D%E9%80%9A%E5%AE%A2%E6%9C%8D" target="_blank">https://work.weixin.qq.com/kfid/kfc14d53dfd64d2767d?enc_scene=ENCFnhiNBt3SyHSswTQU3a8gWQk3E8m8dAgesxJ65cNNR5y&scene_param=+%E5%B9%BF%E4%B8%9C%E5%88%86%E5%85%AC%E5%8F%B8%E4%BF%A1%E4%BF%9D%E9%80%9A%E5%AE%A2%E6%9C%8D</a></p>`
+        }, {
+            shortLabel: "一键修复",
+            keywords: ["首次使用", "一键修复", "电子签名步骤", "第一次用", "怎么开始用", "客户端助手", "全面检测", "首次操作"],
+            title: "首次使用电子签名，一键修复完整操作步骤",
+            answerHtml: `<ol>
+                            <li>插入信保通 USBKey，打开信保通官网下载【信保通客户端助手】；</li>
+                            <li>将客户端助手升级至 <strong>4.0.9.0</strong> 最新版（辅助功能 → 软件设置 → 检查更新）；</li>
+                            <li>执行「全面检测」→「一键修复」；</li>
+                            <li>修复完成后，切换至证书登录页，点击证书下载，按指引完成证书安装。</li>
+                        </ol>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名操作方式一</p>`
+        }, {
+            shortLabel: "浏览器配置",
+            keywords: ["手动配置", "IE浏览器", "IE内核", "浏览器环境", "可信站点", "ActiveX", "控件加载", "手动安装"],
+            title: "手动配置浏览器环境（IE内核浏览器）操作步骤",
+            answerHtml: `<ol>
+                            <li>插入 USBKey，手动安装对应 USBKey 驱动（蓝壳旧版 / 黑壳新版）、浏览器控件 <code>CryptoKitHost.SINOSure.Setup.exe</code>；</li>
+                            <li>IE 浏览器添加可信站点：工具 → Internet 选项 → 安全 → 可信站点 → 站点，填入 <code>https://sol.sinosure.com.cn/</code> 添加；</li>
+                            <li>自定义可信站点安全级别，启用标记安全的 ActiveX 脚本，已签名控件设为提示；</li>
+                            <li>重启浏览器，证书登录页完成证书下载。</li>
+                        </ol>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名操作方式二</p>`
+        }, {
+            shortLabel: "证书下载",
+            keywords: ["证书下载", "下载证书", "证书参考号", "授权码", "两码", "证书安装", "下载失败"],
+            title: "电子签名证书下载完整流程",
+            answerHtml: `<ol>
+                            <li>查收业务开通邮件，获取 <strong>证书参考号、授权码</strong>（两码）；</li>
+                            <li>信保通首页 → 证书登录 → 证书下载；</li>
+                            <li>输入两码，匹配自身 USBKey 新旧款式；</li>
+                            <li>输入 USBKey 密码，等待提示下载成功。</li>
+                        </ol>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名证书下载步骤</p>`
+        }, {
+            shortLabel: "系统与浏览器",
+            keywords: ["支持哪些系统", "操作系统", "浏览器支持", "Win7", "Edge", "IE9", "360浏览器", "搜狗浏览器"],
+            title: "电子签名支持哪些操作系统与浏览器？",
+            answerHtml: `<p><strong>系统：</strong>Win7 及以上；<strong>浏览器：</strong>IE9 及以上、360/搜狗 IE 内核版、Edge 88.0 – 110.0 版本。</p>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题1</p>`
+        }, {
+            shortLabel: "修复失败",
+            keywords: ["在线修复失败", "网络后重试", "修复报错", "一键修复失败", "安全软件", "助手修复"],
+            title: "客户端助手一键修复提示“在线修复失败，请检查网络后重试”如何处理？",
+            answerHtml: `<ol>
+                            <li>关闭电脑安全软件，重新一键修复；</li>
+                            <li>修复无效则手动安装 USBKey 驱动、浏览器控件 <code>CryptoKitHost.SINOSure.Setup.exe</code>。</li>
+                        </ol>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题2</p>`
+        }, {
+            shortLabel: "Edge配置",
+            keywords: ["Edge浏览器", "Edge配置", "Edge版本", "88.0", "110.0", "Edge控件"],
+            title: "Edge浏览器使用电子签名前置配置要求？",
+            answerHtml: `<p>Edge 版本需 <strong>88.0 – 110.0</strong>，安装 <strong>4.0.9.0</strong> 新版客户端助手，执行全面检测 + 一键修复，控件自动适配。</p>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题3</p>`
+        }, {
+            shortLabel: "找不到设备",
+            keywords: ["找不到设备", "设备或资源", "没有识别到UKey", "USB接口", "UKey服务图标", "驱动安装"],
+            title: "证书下载提示“找不到设备或资源”怎么解决？",
+            answerHtml: `<ol>
+                            <li>客户端助手全面检测、一键修复；</li>
+                            <li>更换电脑 USB 接口重插 USBKey；</li>
+                            <li>确认右下角出现 USBKey 服务图标，无图标则手动安装对应驱动（旧版 <code>SINOSURE_UKTool.exe</code>、新版 <code>UyeeServiceInstall.Sinosure.exe</code>）。</li>
+                        </ol>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题4</p>`
+        }, {
+            shortLabel: "识别不到UKey",
+            keywords: ["没有识别到UKey", "重新插UKey", "选择正确样式", "UKey样式", "黑白壳"],
+            title: "提示“没有识别到UKey，请重新插UKey或重新选择正确样式的UKey”怎么处理？",
+            answerHtml: `<p>核对 USBKey 新旧款式，下载证书时选择对应类型；仍报错参照问题4 设备识别方案排查。</p>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题5</p>`
+        }, {
+            shortLabel: "控件加载失败",
+            keywords: ["签名控件加载失败", "控件加载", "允许浏览器弹出", "控件加载项", "ActiveX控件"],
+            title: "签名提示“签名控件加载失败，请使用客户端助手一键修复并且允许浏览器弹出控件加载项”？",
+            answerHtml: `<ol>
+                            <li>使用文档支持的合规浏览器；</li>
+                            <li>客户端助手完成检测修复；</li>
+                            <li>浏览器弹窗提示加载控件时选择允许运行。</li>
+                        </ol>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题6</p>`
+        }, {
+            shortLabel: "无证书可选",
+            keywords: ["没有可选择的证书", "插入中国信保USBKey", "证书未识别", "登录提示证书"],
+            title: "登录提示“没有可选择的证书，请确认您已插入中国信保USBKey”？",
+            answerHtml: `<p>USBKey 未识别，全套排查方案参照问题4。</p>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题7</p>`
+        }, {
+            shortLabel: "UKey锁定",
+            keywords: ["输错密码锁定", "UKey锁定", "旧版解锁", "新版解锁", "挑战码", "授权码", "在线解锁", "UKey被锁"],
+            title: "USBKey输错密码锁定，新旧版解锁流程？",
+            answerHtml: `<p><strong>旧版 USBKey</strong></p>
+                        <ol>
+                            <li>客户端助手 → UKEY 管理 → 点击在线解锁；</li>
+                            <li>填写信保通编号申请解锁；</li>
+                            <li>向客户经理索要解锁码，或线下办理解锁。</li>
+                        </ol>
+                        <p><strong>新版 USBKey</strong></p>
+                        <ol>
+                            <li>右下角 UKey 图标选择「忘记 PIN 码」，复制挑战码发给客户经理；</li>
+                            <li>客户经理使用管理员白 Key 生成授权码；</li>
+                            <li>粘贴授权码重置密码为默认 <code>123456</code>，登录后立即修改密码。</li>
+                        </ol>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题8</p>`
+        }, {
+            shortLabel: "容量已满",
+            keywords: ["UKey容量已满", "证书容器", "更换UKey", "清理证书", "容量满"],
+            title: "证书下载提示“您的UKey容量已满，请联系客户经理更换UKey”？",
+            answerHtml: `<p>旧版 UKey 最多存储 4 个证书容器，联系客户经理清理无用证书容器，无法清理则更换 USBKey。</p>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题9</p>`
+        }, {
+            shortLabel: "已被锁定",
+            keywords: ["UKey已经被锁定", "客户经理解锁", "签名提示锁定"],
+            title: "签名提示“您的UKey已经被锁定，请联系客户经理进行解锁”？",
+            answerHtml: `<p>USBKey 密码锁定，解锁流程参照问题8。</p>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题10</p>`
+        }, {
+            shortLabel: "企业不匹配",
+            keywords: ["证书与所属企业不匹配", "企业名称不一致", "证书绑定", "企业匹配"],
+            title: "签名提示证书与所属企业不匹配？",
+            answerHtml: `<p>保单企业、证书绑定企业、UKey 内置证书企业名称三者必须一致，不一致联系客户经理核对绑定信息。</p>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题11</p>`
+        }, {
+            shortLabel: "检测失败",
+            keywords: ["检测失败", "无法连接到服务器", "助手检测失败", "版本过低"],
+            title: "客户端助手提示“检测失败（无法连接到服务器）”？",
+            answerHtml: `<p>客户端助手版本过低，前往信保通首页重新下载最新版助手，检查网络通畅后重试。</p>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题12</p>`
+        }, {
+            shortLabel: "控件被阻止",
+            keywords: ["Windows阻止控件", "无法验证发布者", "控件被阻止", "安全软件阻止"],
+            title: "Windows阻止控件，提示“无法验证发布者”？",
+            answerHtml: `<ol>
+                            <li>客户端助手一键修复；</li>
+                            <li>手动安装浏览器控件 <code>CryptoKitHost.SINOSure.Setup.exe</code>，重启浏览器。</li>
+                        </ol>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题13</p>`
+        }, {
+            shortLabel: "附件错误",
+            keywords: ["上传附件错误", "附件获取错误", "重新上传附件", "附件上传失败"],
+            title: "上传附件提示“附件获取错误，请重新上传附件”？",
+            answerHtml: `<p>删除当前附件，清理缓存后重新上传文件。</p>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题14</p>`
+        }, {
+            shortLabel: "未关联用户",
+            keywords: ["证书尚未关联用户", "关联用户", "admin绑定", "证书绑定", "用户权限管理"],
+            title: "证书登录提示“证书尚未关联用户”？",
+            answerHtml: `<ol>
+                            <li>使用管理员 <code>admin</code> 账号登录信保通；</li>
+                            <li>基础管理 → 用户权限管理 → 证书管理；</li>
+                            <li>将证书绑定对应操作员账号；绑定后仅支持证书登录，无法用户名密码登录。</li>
+                        </ol>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题15</p>`
+        }, {
+            shortLabel: "修改初始密码",
+            keywords: ["修改UKey初始密码", "初始密码123456", "修改密码", "密码规则", "UKey密码修改"],
+            title: "下载证书提示“请修改UKey初始密码再进行操作”？",
+            answerHtml: `<p>新版 UKey 初始密码 <code>123456</code>，修改密码规则：6–16 位，数字 / 字母 / 符号至少两类组合；修改完成后才可下载证书。</p>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题16</p>`
+        }, {
+            shortLabel: "证书过期",
+            keywords: ["证书已过期", "更换UKey中其他证书", "证书过期", "有效证书"],
+            title: "签名提示“证书已过期，请检查更换UKey中其他证书!”？",
+            answerHtml: `<ol>
+                            <li>查看 UKey 内是否存在其他有效证书，切换证书重试；</li>
+                            <li>无有效证书联系客户经理更新 / 换发证书。</li>
+                        </ol>
+                        <p>详见：<a class="link-text" target="_blank" href="https://sol.sinosure.com.cn/biz/app/eSign/eSign.html">https://sol.sinosure.com.cn/biz/app/eSign/eSign.html</a> 电子签名常见问题 问题17</p>`
+        }];
+
+        // ================================================================
+        //  2. DOM 引用
+        // ================================================================
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const quickContainer = document.getElementById('quickQuestions');
+
+        // ================================================================
+        //  3. 渲染快捷按钮（使用短标签，点击传递完整标题）
+        // ================================================================
+        faqs.forEach(faq => {
+            const btn = document.createElement('button');
+            btn.textContent = faq.shortLabel;
+            btn.title = faq.title; // 悬停显示完整标题
+            btn.addEventListener('click', () => handleUserMessage(faq.title));
+            quickContainer.appendChild(btn);
+        });
+
+        // ================================================================
+        //  4. 消息管理
+        // ================================================================
+        function addMessage(type, html) {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.innerHTML = html;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showTyping() {
+            const div = document.createElement('div');
+            div.className = 'typing';
+            div.id = 'typingIndicator';
+            div.innerHTML = '<span></span><span></span><span></span>';
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function hideTyping() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        // ================================================================
+        //  5. 构建回答 HTML
+        // ================================================================
+        function buildAnswerHTML(faq) {
+            return `<div class="answer-title">📌 ${faq.title}</div>
+                    <div class="raw-html">${faq.answerHtml}</div>`;
+        }
+
+        // ================================================================
+        //  6. 意图匹配（模糊搜索 + 权重）
+        // ================================================================
+        function matchFAQ(query) {
+            if (!query || !query.trim()) return null;
+            const q = query.trim().toLowerCase();
+            let best = null;
+            let bestScore = 0;
+
+            faqs.forEach(faq => {
+                let score = 0;
+                faq.keywords.forEach(kw => {
+                    const kwLower = kw.toLowerCase();
+                    if (q.includes(kwLower)) {
+                        score += kwLower.length * 3;
+                    }
+                    if (kwLower.includes(q) || q.includes(kwLower)) {
+                        score += kwLower.length;
+                    }
+                });
+                const titleLower = faq.title.toLowerCase();
+                if (titleLower.includes(q)) {
+                    score += q.length * 2;
+                }
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = faq;
+                }
+            });
+
+            return bestScore > 1 ? best : null;
+        }
+
+        // ================================================================
+        //  7. 处理用户消息
+        // ================================================================
+        function handleUserMessage(text) {
+            if (!text || !text.trim()) return;
+            const query = text.trim();
+
+            addMessage('user', query);
+            userInput.value = '';
+
+            showTyping();
+
+            setTimeout(() => {
+                hideTyping();
+                const matched = matchFAQ(query);
+                if (matched) {
+                    addMessage('bot', buildAnswerHTML(matched));
+                } else {
+                    addMessage('bot', `
+                        <div class="no-match">🙇 抱歉，暂未找到完全匹配的FAQ解答。</div>
+                        <div style="margin-top:8px;color:#666;font-size:13px;">
+                            建议尝试以下关键词：<br>
+                            UKey、证书下载、一键修复、忘记密码、控件加载、浏览器配置
+                        </div>
+                    `);
+                }
+            }, 500);
+        }
+
+        // ================================================================
+        //  8. 事件绑定
+        // ================================================================
+        sendBtn.addEventListener('click', () => {
+            handleUserMessage(userInput.value);
+        });
+
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleUserMessage(userInput.value);
+            }
+        });
+
+        // ================================================================
+        //  9. 初始化
+        // ================================================================
+        console.log('✅ 信保通电子签名智能客服已启动（21个FAQ，短标签）');
+    </script>
+
+</body>
+</html>
